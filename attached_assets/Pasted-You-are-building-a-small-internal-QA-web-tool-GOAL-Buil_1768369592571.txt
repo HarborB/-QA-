@@ -1,0 +1,71 @@
+You are building a small internal QA web tool.
+
+GOAL
+Build a lightweight web application to help testers quickly validate the quality of AI-extracted document clause structures.
+The problem is that the extracted JSON contains very long clause_content fields, making it hard to visually inspect whether the structural extraction is correct.
+
+The tool must compress the output and surface only structural information so testers can assess correctness at a glance.
+
+TECH STACK
+- Backend: FastAPI (Python)
+- Frontend: simple HTML + minimal JS (no heavy frameworks)
+- This is an internal testing tool, not production-facing
+
+INPUT
+- The UI must provide a large text input (textarea)
+- Testers will manually copy-paste AI-extracted clause data into the textarea
+- The pasted content is typically a JSON array of objects, each object representing one clause
+- No file upload is required
+
+Each clause object may contain fields like:
+- clause_number (string, e.g. "2.7.3", "3", "3.1.")
+- clause_title (string, may be empty)
+- clause_page (string or number, may be empty)
+- clause_content (very long text — MUST be ignored in output)
+- clause_path (array of strings, e.g. ["2", "2.7", "2.7.3"])
+- clause_level, clause_parent (optional, not required for display)
+
+OUTPUT (CORE REQUIREMENT)
+After submission, render a compact table directly in the web page with ONLY these columns:
+
+| Clause Number | Clause Title | Clause Page | Clause Path |
+
+Rules:
+- clause_content must NEVER be shown
+- The table is the primary output (no downloads)
+
+VALIDATION CHECKS (IMPORTANT)
+In addition to the table, compute and display a small summary of structural issues to help testers evaluate extraction quality:
+
+1. Clause number continuity
+   - Normalize clause_number (remove trailing dots like "3.")
+   - Use clause_path to determine hierarchy
+   - Within the same parent path, check whether sibling clause numbers increment sequentially
+   - Flag gaps or jumps as "potential missing clauses"
+
+2. Missing or empty clause titles
+   - clause_title is empty or whitespace-only
+
+3. Missing or invalid clause pages
+   - clause_page is empty or non-numeric
+
+The tool does NOT need to understand document semantics — only structural consistency.
+
+UX REQUIREMENTS
+- One-page interface
+- Textarea → Submit button → Results below
+- Results include:
+  - Issue summary (lists of detected problems)
+  - The compact clause table
+- Design can be minimal and utilitarian (testing-focused)
+
+ROBUSTNESS
+- Assume input may be messy but generally valid JSON
+- Gracefully handle parse errors with clear error messages
+- Ignore any unknown fields
+
+DELIVERABLE
+- A runnable FastAPI app
+- Prefer a single-file or very small file structure
+- Clear, readable code
+- Prioritize correctness over visual polish
