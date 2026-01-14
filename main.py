@@ -6,6 +6,10 @@ import json
 
 app = FastAPI(title="Clause QA Tool")
 
+@app.get("/health")
+async def health_check():
+    return {"status": "ok"}
+
 def normalize_clause_number(clause_number: str) -> str:
     if not clause_number:
         return ""
