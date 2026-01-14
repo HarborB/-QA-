@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse
 from pydantic import BaseModel
 from typing import List, Optional
 import json
@@ -8,12 +8,11 @@ app = FastAPI(title="Clause QA Tool")
 
 @app.get("/")
 async def root():
-    from fastapi.responses import HTMLResponse
-    return HTMLResponse(content='<html><body><p>Clause QA Tool - <a href="/app">Open App</a></p></body></html>', status_code=200)
+    return PlainTextResponse(content="ok", status_code=200)
 
 @app.get("/health")
 async def health_check():
-    return {"status": "ok"}
+    return PlainTextResponse(content="ok", status_code=200)
 
 def normalize_clause_number(clause_number: str) -> str:
     if not clause_number:
