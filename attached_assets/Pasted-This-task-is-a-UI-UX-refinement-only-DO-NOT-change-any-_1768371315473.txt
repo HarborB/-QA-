@@ -1,0 +1,86 @@
+This task is a UI/UX refinement only.
+DO NOT change any existing features, logic, validation rules, or data handling.
+
+CONTEXT
+This is an internal web-based QA tool used by:
+- QA engineers
+- AI engineers
+- Technical product reviewers
+
+They use it frequently, quickly, and rationally.
+The UI should feel calm, precise, and trustworthy — not flashy.
+
+GOAL
+Improve the visual design and user experience so the interface feels:
+- Simple
+- High-end
+- Professional
+- Easy to scan for structure-related issues
+
+DESIGN PRINCIPLES
+- Minimalist, information-dense, and distraction-free
+- Neutral color palette (grays, soft whites, muted accents)
+- Clear visual hierarchy
+- Generous spacing and alignment
+- Subtle emphasis only where it improves clarity
+
+DO NOT:
+- Add animations
+- Add new features
+- Change copy meaning
+- Reorganize data structure
+- Introduce heavy UI frameworks
+
+SPECIFIC UI IMPROVEMENTS TO APPLY
+
+1. Layout
+- Center content with a reasonable max-width (e.g. ~1100–1200px)
+- Increase vertical spacing between major sections
+- Ensure consistent margins and padding
+
+2. Typography
+- Use a clean system font stack or a modern sans-serif
+- Clear hierarchy:
+  - Page title: strong, confident
+  - Section headers: calm and distinct
+  - Table text: compact, highly readable
+- Avoid decorative fonts
+
+3. Input Area (Textarea)
+- Make it visually distinct as the primary input
+- Use subtle background contrast
+- Rounded corners, soft border
+- Clear placeholder styling
+- Comfortable line height for pasted JSON
+
+4. Primary Action Button
+- One clear primary action
+- Solid, muted accent color (not loud)
+- Rounded corners
+- Strong visual affordance without being aggressive
+
+5. Validation / Status Section
+- Visually separate validation results from the table
+- Use subtle color coding:
+  - Green for “no issues”
+  - Muted yellow/orange for warnings
+  - Soft red for errors
+- Avoid harsh alerts or flashing styles
+
+6. Table Styling
+- Improve readability:
+  - Clear column alignment
+  - Subtle row separators
+  - Slight row hover highlight (optional)
+- Keep it compact but not cramped
+- Make structural columns (Clause Number, Path) easy to scan
+- Ensure long titles wrap cleanly without breaking layout
+
+7. Overall Feel
+- The UI should feel like an internal tool at a high-quality tech company
+- Prioritize clarity, trust, and efficiency over visual decoration
+- If unsure, choose the more restrained option
+
+DELIVERABLE
+- Only adjust HTML/CSS (and minimal JS if required for styling)
+- Preserve all existing functionality exactly as-is
