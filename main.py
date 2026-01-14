@@ -264,6 +264,50 @@ async def home():
             background: #ea580c;
         }
         
+        .upload-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .upload-label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #374151;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 12px;
+        }
+        
+        .file-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .file-input {
+            font-size: 0.9rem;
+            color: #374151;
+        }
+        
+        .file-input::file-selector-button {
+            background: #f3f4f6;
+            border: 1px solid #d1d5db;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #374151;
+            cursor: pointer;
+            transition: background 0.15s;
+            margin-right: 12px;
+        }
+        
+        .file-input::file-selector-button:hover {
+            background: #e5e7eb;
+        }
+        
         .error-message {
             background: #fef2f2;
             border: 1px solid #fecaca;
@@ -507,6 +551,13 @@ async def home():
 ]'></textarea>
             <button id="submitBtn" class="btn-primary" onclick="analyzeJson()">Analyze Clauses</button>
             <button class="btn-clear" onclick="clearInput()">Clear</button>
+            
+            <div class="upload-section">
+                <label class="upload-label">Or Upload JSON File</label>
+                <div class="file-input-wrapper">
+                    <input type="file" id="fileInput" class="file-input" accept=".json,application/json" onchange="handleFileUpload(event)">
+                </div>
+            </div>
         </div>
         
         <div id="errorDiv" class="error-message" style="display: none;"></div>
@@ -551,8 +602,34 @@ async def home():
         
         function clearInput() {
             document.getElementById('jsonInput').value = '';
+            document.getElementById('fileInput').value = '';
             document.getElementById('errorDiv').style.display = 'none';
             document.getElementById('results').style.display = 'none';
+        }
+        
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            if (!file.name.endsWith('.json') && file.type !== 'application/json') {
+                const errorDiv = document.getElementById('errorDiv');
+                errorDiv.textContent = 'Please upload a valid JSON file (.json)';
+                errorDiv.style.display = 'block';
+                event.target.value = '';
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('jsonInput').value = e.target.result;
+                analyzeJson();
+            };
+            reader.onerror = function() {
+                const errorDiv = document.getElementById('errorDiv');
+                errorDiv.textContent = 'Error reading file. Please try again.';
+                errorDiv.style.display = 'block';
+            };
+            reader.readAsText(file);
         }
         
         async function analyzeJson() {
