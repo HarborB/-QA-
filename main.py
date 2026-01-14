@@ -6,6 +6,11 @@ import json
 
 app = FastAPI(title="Clause QA Tool")
 
+@app.get("/")
+async def root():
+    from fastapi.responses import HTMLResponse
+    return HTMLResponse(content='<html><body><p>Clause QA Tool - <a href="/app">Open App</a></p></body></html>', status_code=200)
+
 @app.get("/health")
 async def health_check():
     return {"status": "ok"}
@@ -111,7 +116,7 @@ def extract_display_fields(clauses: List[dict]) -> List[dict]:
         })
     return result
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/app", response_class=HTMLResponse)
 async def home():
     html_content = '''<!DOCTYPE html>
 <html lang="en">
