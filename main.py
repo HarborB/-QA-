@@ -244,6 +244,26 @@ async def home():
             cursor: not-allowed;
         }
         
+        .btn-clear {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #f97316;
+            color: #fff;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.15s;
+            margin-left: 12px;
+        }
+        
+        .btn-clear:hover {
+            background: #ea580c;
+        }
+        
         .error-message {
             background: #fef2f2;
             border: 1px solid #fecaca;
@@ -486,6 +506,7 @@ async def home():
   }
 ]'></textarea>
             <button id="submitBtn" class="btn-primary" onclick="analyzeJson()">Analyze Clauses</button>
+            <button class="btn-clear" onclick="clearInput()">Clear</button>
         </div>
         
         <div id="errorDiv" class="error-message" style="display: none;"></div>
@@ -526,6 +547,12 @@ async def home():
             const div = document.createElement('div');
             div.textContent = String(text);
             return div.innerHTML;
+        }
+        
+        function clearInput() {
+            document.getElementById('jsonInput').value = '';
+            document.getElementById('errorDiv').style.display = 'none';
+            document.getElementById('results').style.display = 'none';
         }
         
         async function analyzeJson() {
