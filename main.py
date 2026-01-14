@@ -381,7 +381,7 @@ async def home():
                 const title = clause.clause_title ? escapeHtml(clause.clause_title) : '<span class="empty-value">(empty)</span>';
                 const page = clause.clause_page !== '' && clause.clause_page !== null ? escapeHtml(clause.clause_page) : '<span class="empty-value">(empty)</span>';
                 const path = clause.clause_path && clause.clause_path.length > 0 
-                    ? `<span class="clause-path">${escapeHtml(clause.clause_path.join(' > '))}</span>` 
+                    ? `<span class="clause-path">[${clause.clause_path.map(p => escapeHtml(p)).join(', ')}]</span>` 
                     : '<span class="empty-value">(empty)</span>';
                 
                 tableHtml += `<tr>
