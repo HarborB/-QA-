@@ -8,7 +8,7 @@ app = FastAPI(title="Clause QA Tool")
 
 @app.get("/")
 async def root():
-    return PlainTextResponse(content="ok", status_code=200)
+    return HTMLResponse(content='<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=/app"></head><body></body></html>', status_code=200)
 
 @app.get("/health")
 async def health_check():
