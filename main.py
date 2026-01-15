@@ -152,6 +152,43 @@ async def home():
         
         .page-header {
             margin-bottom: 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        
+        .header-content {
+            flex: 1;
+        }
+        
+        .lang-toggle {
+            display: flex;
+            gap: 4px;
+            background: #f3f4f6;
+            padding: 4px;
+            border-radius: 6px;
+        }
+        
+        .lang-btn {
+            padding: 6px 12px;
+            border: none;
+            background: transparent;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #6b7280;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.15s;
+        }
+        
+        .lang-btn:hover {
+            color: #374151;
+        }
+        
+        .lang-btn.active {
+            background: #fff;
+            color: #111;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
         
         .page-title {
@@ -589,12 +626,18 @@ async def home():
 <body>
     <div class="container">
         <header class="page-header">
-            <h1 class="page-title">Clause Structure QA Tool</h1>
-            <p class="page-subtitle">Validate structural consistency of AI-extracted document clauses</p>
+            <div class="header-content">
+                <h1 class="page-title" data-i18n="title">Clause Structure QA Tool</h1>
+                <p class="page-subtitle" data-i18n="subtitle">Validate structural consistency of AI-extracted document clauses</p>
+            </div>
+            <div class="lang-toggle">
+                <button class="lang-btn active" id="langEn" onclick="setLanguage('en')">EN</button>
+                <button class="lang-btn" id="langZh" onclick="setLanguage('zh')">中文</button>
+            </div>
         </header>
         
         <div class="input-section">
-            <label class="input-label" for="jsonInput">Input JSON</label>
+            <label class="input-label" for="jsonInput" data-i18n="inputJson">Input JSON</label>
             <textarea id="jsonInput" placeholder='[
   {
     "clause_number": "1",
@@ -611,11 +654,11 @@ async def home():
     "clause_path": ["2", "2.1"]
   }
 ]'></textarea>
-            <button id="submitBtn" class="btn-primary" onclick="analyzeJson()">Analyze Clauses</button>
-            <button class="btn-clear" onclick="clearInput()">Clear</button>
+            <button id="submitBtn" class="btn-primary" onclick="analyzeJson()" data-i18n="analyze">Analyze Clauses</button>
+            <button class="btn-clear" onclick="clearInput()" data-i18n="clear">Clear</button>
             
             <div class="upload-section">
-                <label class="upload-label">Or Upload JSON File</label>
+                <label class="upload-label" data-i18n="uploadLabel">Or Upload JSON File</label>
                 <div class="file-input-wrapper">
                     <input type="file" id="fileInput" class="file-input" accept=".json,application/json" onchange="handleFileUpload(event)">
                 </div>
@@ -627,25 +670,25 @@ async def home():
         <div id="results" class="results">
             <div class="issues-section">
                 <div class="section-header">
-                    <h2 class="section-title">Validation Results</h2>
+                    <h2 class="section-title" data-i18n="validationResults">Validation Results</h2>
                 </div>
                 <div id="issuesSummary"></div>
             </div>
             
             <div class="table-section">
                 <div class="section-header">
-                    <h2 class="section-title">Clause Structure</h2>
+                    <h2 class="section-title" data-i18n="clauseStructure">Clause Structure</h2>
                     <span id="clauseCount"></span>
                 </div>
                 <div class="table-wrapper">
                     <table>
                         <thead>
                             <tr>
-                                <th class="col-number">Number</th>
-                                <th class="col-title">Title</th>
-                                <th class="col-page">Page</th>
-                                <th class="col-path">Path</th>
-                                <th class="col-issues">Issues</th>
+                                <th class="col-number" data-i18n="colNumber">Number</th>
+                                <th class="col-title" data-i18n="colTitle">Title</th>
+                                <th class="col-page" data-i18n="colPage">Page</th>
+                                <th class="col-path" data-i18n="colPath">Path</th>
+                                <th class="col-issues" data-i18n="colIssues">Issues</th>
                             </tr>
                         </thead>
                         <tbody id="clauseTable"></tbody>
@@ -656,6 +699,100 @@ async def home():
     </div>
 
     <script>
+        const i18n = {
+            en: {
+                title: 'Clause Structure QA Tool',
+                subtitle: 'Validate structural consistency of AI-extracted document clauses',
+                inputJson: 'Input JSON',
+                analyze: 'Analyze Clauses',
+                analyzing: 'Analyzing...',
+                clear: 'Clear',
+                uploadLabel: 'Or Upload JSON File',
+                validationResults: 'Validation Results',
+                clauseStructure: 'Clause Structure',
+                colNumber: 'Number',
+                colTitle: 'Title',
+                colPage: 'Page',
+                colPath: 'Path',
+                colIssues: 'Issues',
+                clauses: 'clauses',
+                noIssues: 'No structural issues detected',
+                continuityGaps: 'Continuity Gaps',
+                missingTitles: 'Missing Titles',
+                invalidPages: 'Invalid Pages',
+                badgeGap: 'Gap',
+                badgeNoTitle: 'No Title',
+                badgePage: 'Page',
+                tooltipNoTitle: 'Missing or empty title',
+                tooltipGap: 'Expected {expected} after "{after}", found {found}',
+                errorInvalidJson: 'Invalid JSON format. Please check your input.',
+                errorEmptyInput: 'Please enter JSON data to analyze.',
+                errorNotArray: 'JSON must be an array of clause objects.',
+                errorServer: 'Server error: ',
+                errorReadFile: 'Error reading file. Please try again.',
+                errorInvalidFile: 'Please upload a valid JSON file (.json)'
+            },
+            zh: {
+                title: '条款结构QA工具',
+                subtitle: '验证AI提取文档条款的结构一致性',
+                inputJson: '输入JSON',
+                analyze: '分析条款',
+                analyzing: '分析中...',
+                clear: '清除',
+                uploadLabel: '或上传JSON文件',
+                validationResults: '验证结果',
+                clauseStructure: '条款结构',
+                colNumber: '编号',
+                colTitle: '标题',
+                colPage: '页码',
+                colPath: '路径',
+                colIssues: '问题',
+                clauses: '个条款',
+                noIssues: '未检测到结构问题',
+                continuityGaps: '连续性缺口',
+                missingTitles: '缺失标题',
+                invalidPages: '无效页码',
+                badgeGap: '缺口',
+                badgeNoTitle: '无标题',
+                badgePage: '页码',
+                tooltipNoTitle: '标题缺失或为空',
+                tooltipGap: '在"{after}"之后应为{expected}，实际为{found}',
+                errorInvalidJson: 'JSON格式无效，请检查输入。',
+                errorEmptyInput: '请输入JSON数据进行分析。',
+                errorNotArray: 'JSON必须是条款对象数组。',
+                errorServer: '服务器错误：',
+                errorReadFile: '读取文件失败，请重试。',
+                errorInvalidFile: '请上传有效的JSON文件（.json）'
+            }
+        };
+        
+        let currentLang = localStorage.getItem('lang') || 'en';
+        
+        function t(key, params = {}) {
+            let text = i18n[currentLang][key] || i18n['en'][key] || key;
+            for (const [k, v] of Object.entries(params)) {
+                text = text.replace(`{${k}}`, v);
+            }
+            return text;
+        }
+        
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('lang', lang);
+            
+            document.getElementById('langEn').classList.toggle('active', lang === 'en');
+            document.getElementById('langZh').classList.toggle('active', lang === 'zh');
+            
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                el.textContent = t(key);
+            });
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            setLanguage(currentLang);
+        });
+        
         function escapeHtml(text) {
             if (text === null || text === undefined) return '';
             const div = document.createElement('div');
@@ -676,7 +813,7 @@ async def home():
             
             if (!file.name.endsWith('.json') && file.type !== 'application/json') {
                 const errorDiv = document.getElementById('errorDiv');
-                errorDiv.textContent = 'Please upload a valid JSON file (.json)';
+                errorDiv.textContent = t('errorInvalidFile');
                 errorDiv.style.display = 'block';
                 event.target.value = '';
                 return;
@@ -689,7 +826,7 @@ async def home():
             };
             reader.onerror = function() {
                 const errorDiv = document.getElementById('errorDiv');
-                errorDiv.textContent = 'Error reading file. Please try again.';
+                errorDiv.textContent = t('errorReadFile');
                 errorDiv.style.display = 'block';
             };
             reader.readAsText(file);
@@ -705,7 +842,7 @@ async def home():
             results.style.display = 'none';
             
             if (!input) {
-                errorDiv.textContent = 'Please paste JSON data into the textarea.';
+                errorDiv.textContent = t('errorEmptyInput');
                 errorDiv.style.display = 'block';
                 return;
             }
@@ -714,19 +851,19 @@ async def home():
             try {
                 parsed = JSON.parse(input);
             } catch (e) {
-                errorDiv.textContent = 'Invalid JSON: ' + e.message;
+                errorDiv.textContent = t('errorInvalidJson');
                 errorDiv.style.display = 'block';
                 return;
             }
             
             if (!Array.isArray(parsed)) {
-                errorDiv.textContent = 'Expected a JSON array of clause objects.';
+                errorDiv.textContent = t('errorNotArray');
                 errorDiv.style.display = 'block';
                 return;
             }
             
             btn.disabled = true;
-            btn.textContent = 'Analyzing...';
+            btn.textContent = t('analyzing');
             
             try {
                 const response = await fetch('/analyze', {
@@ -736,7 +873,7 @@ async def home():
                 });
                 
                 if (!response.ok) {
-                    throw new Error('Server error: ' + response.status);
+                    throw new Error(t('errorServer') + response.status);
                 }
                 
                 const data = await response.json();
@@ -747,7 +884,7 @@ async def home():
                 errorDiv.style.display = 'block';
             } finally {
                 btn.disabled = false;
-                btn.textContent = 'Analyze Clauses';
+                btn.textContent = t('analyze');
             }
         }
         
@@ -757,7 +894,7 @@ async def home():
             const clauseCount = document.getElementById('clauseCount');
             const issues = data.issues;
             
-            clauseCount.innerHTML = `<span class="badge badge-count">${escapeHtml(data.clauses.length)} clauses</span>`;
+            clauseCount.innerHTML = `<span class="badge badge-count">${escapeHtml(data.clauses.length)} ${t('clauses')}</span>`;
             
             // Build issue map by row index
             const issueMap = {};
@@ -765,13 +902,13 @@ async def home():
             for (const item of issues.empty_titles) {
                 const idx = item.index;
                 if (!issueMap[idx]) issueMap[idx] = [];
-                issueMap[idx].push({type: 'title', label: 'No Title', tooltip: 'Missing or empty title'});
+                issueMap[idx].push({type: 'title', label: t('badgeNoTitle'), tooltip: t('tooltipNoTitle')});
             }
             
             for (const item of issues.invalid_pages) {
                 const idx = item.index;
                 if (!issueMap[idx]) issueMap[idx] = [];
-                issueMap[idx].push({type: 'page', label: 'Page', tooltip: item.reason});
+                issueMap[idx].push({type: 'page', label: t('badgePage'), tooltip: item.reason});
             }
             
             for (const gap of issues.continuity_gaps) {
@@ -779,7 +916,7 @@ async def home():
                 const idx = data.clauses.findIndex(c => c.clause_number === gap.before_clause);
                 if (idx !== -1) {
                     if (!issueMap[idx]) issueMap[idx] = [];
-                    issueMap[idx].push({type: 'gap', label: 'Gap', tooltip: `Expected ${gap.expected_next} after "${gap.after_clause}", found ${gap.found}`});
+                    issueMap[idx].push({type: 'gap', label: t('badgeGap'), tooltip: t('tooltipGap', {expected: gap.expected_next, after: gap.after_clause, found: gap.found})});
                 }
             }
             
@@ -788,17 +925,17 @@ async def home():
             let issuesHtml = '';
             
             if (totalIssues === 0) {
-                issuesHtml = '<p class="no-issues">No structural issues detected</p>';
+                issuesHtml = `<p class="no-issues">${t('noIssues')}</p>`;
             } else {
                 issuesHtml = '<div class="issue-summary">';
                 if (issues.continuity_gaps.length > 0) {
-                    issuesHtml += `<div class="issue-summary-item"><span class="badge badge-warning">${escapeHtml(issues.continuity_gaps.length)}</span> Continuity Gaps</div>`;
+                    issuesHtml += `<div class="issue-summary-item"><span class="badge badge-warning">${escapeHtml(issues.continuity_gaps.length)}</span> ${t('continuityGaps')}</div>`;
                 }
                 if (issues.empty_titles.length > 0) {
-                    issuesHtml += `<div class="issue-summary-item"><span class="badge badge-warning">${escapeHtml(issues.empty_titles.length)}</span> Missing Titles</div>`;
+                    issuesHtml += `<div class="issue-summary-item"><span class="badge badge-warning">${escapeHtml(issues.empty_titles.length)}</span> ${t('missingTitles')}</div>`;
                 }
                 if (issues.invalid_pages.length > 0) {
-                    issuesHtml += `<div class="issue-summary-item"><span class="badge badge-error">${escapeHtml(issues.invalid_pages.length)}</span> Invalid Pages</div>`;
+                    issuesHtml += `<div class="issue-summary-item"><span class="badge badge-error">${escapeHtml(issues.invalid_pages.length)}</span> ${t('invalidPages')}</div>`;
                 }
                 issuesHtml += '</div>';
             }
