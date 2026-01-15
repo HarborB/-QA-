@@ -522,6 +522,68 @@ async def home():
             background: #f3f4f6;
             color: #4b5563;
         }
+        
+        .row-issue {
+            background: #fffbeb;
+            border-left: 3px solid #f59e0b;
+        }
+        
+        .row-issue-error {
+            background: #fef2f2;
+            border-left: 3px solid #ef4444;
+        }
+        
+        .issue-badges {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+        
+        .inline-badge {
+            display: inline-flex;
+            align-items: center;
+            font-size: 0.65rem;
+            font-weight: 500;
+            padding: 2px 6px;
+            border-radius: 4px;
+            cursor: help;
+            white-space: nowrap;
+        }
+        
+        .inline-badge-gap {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .inline-badge-title {
+            background: #fed7aa;
+            color: #9a3412;
+        }
+        
+        .inline-badge-page {
+            background: #fecaca;
+            color: #b91c1c;
+        }
+        
+        .issue-summary {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .issue-summary-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            color: #4b5563;
+        }
+        
+        .col-issues {
+            width: 120px;
+            text-align: left;
+        }
     </style>
 </head>
 <body>
@@ -583,6 +645,7 @@ async def home():
                                 <th class="col-title">Title</th>
                                 <th class="col-page">Page</th>
                                 <th class="col-path">Path</th>
+                                <th class="col-issues">Issues</th>
                             </tr>
                         </thead>
                         <tbody id="clauseTable"></tbody>
@@ -692,73 +755,90 @@ async def home():
             const issuesSummary = document.getElementById('issuesSummary');
             const clauseTable = document.getElementById('clauseTable');
             const clauseCount = document.getElementById('clauseCount');
+            const issues = data.issues;
             
             clauseCount.innerHTML = `<span class="badge badge-count">${escapeHtml(data.clauses.length)} clauses</span>`;
             
-            let issuesHtml = '';
-            const issues = data.issues;
+            // Build issue map by row index
+            const issueMap = {};
             
+            for (const item of issues.empty_titles) {
+                const idx = item.index;
+                if (!issueMap[idx]) issueMap[idx] = [];
+                issueMap[idx].push({type: 'title', label: 'No Title', tooltip: 'Missing or empty title'});
+            }
+            
+            for (const item of issues.invalid_pages) {
+                const idx = item.index;
+                if (!issueMap[idx]) issueMap[idx] = [];
+                issueMap[idx].push({type: 'page', label: 'Page', tooltip: item.reason});
+            }
+            
+            for (const gap of issues.continuity_gaps) {
+                // Gap is associated with the "before_clause" row
+                const idx = data.clauses.findIndex(c => c.clause_number === gap.before_clause);
+                if (idx !== -1) {
+                    if (!issueMap[idx]) issueMap[idx] = [];
+                    issueMap[idx].push({type: 'gap', label: 'Gap', tooltip: `Expected ${gap.expected_next} after "${gap.after_clause}", found ${gap.found}`});
+                }
+            }
+            
+            // Render summary
             const totalIssues = issues.continuity_gaps.length + issues.empty_titles.length + issues.invalid_pages.length;
+            let issuesHtml = '';
             
             if (totalIssues === 0) {
                 issuesHtml = '<p class="no-issues">No structural issues detected</p>';
             } else {
+                issuesHtml = '<div class="issue-summary">';
                 if (issues.continuity_gaps.length > 0) {
-                    issuesHtml += `<div class="issue-category">
-                        <div class="issue-category-header">
-                            <span class="issue-category-title">Clause Number Continuity Gaps</span>
-                            <span class="badge badge-warning">${escapeHtml(issues.continuity_gaps.length)}</span>
-                        </div>
-                        <ul class="issue-list">`;
-                    for (const gap of issues.continuity_gaps) {
-                        issuesHtml += `<li>Under "${escapeHtml(gap.parent)}": Expected ${escapeHtml(gap.expected_next)} after "${escapeHtml(gap.after_clause)}", found "${escapeHtml(gap.before_clause)}" (${escapeHtml(gap.found)})</li>`;
-                    }
-                    issuesHtml += '</ul></div>';
+                    issuesHtml += `<div class="issue-summary-item"><span class="badge badge-warning">${escapeHtml(issues.continuity_gaps.length)}</span> Continuity Gaps</div>`;
                 }
-                
                 if (issues.empty_titles.length > 0) {
-                    issuesHtml += `<div class="issue-category">
-                        <div class="issue-category-header">
-                            <span class="issue-category-title">Missing or Empty Titles</span>
-                            <span class="badge badge-warning">${escapeHtml(issues.empty_titles.length)}</span>
-                        </div>
-                        <ul class="issue-list">`;
-                    for (const item of issues.empty_titles) {
-                        issuesHtml += `<li>Row ${escapeHtml(item.index)}: Clause "${escapeHtml(item.clause_number)}" has no title</li>`;
-                    }
-                    issuesHtml += '</ul></div>';
+                    issuesHtml += `<div class="issue-summary-item"><span class="badge badge-warning">${escapeHtml(issues.empty_titles.length)}</span> Missing Titles</div>`;
                 }
-                
                 if (issues.invalid_pages.length > 0) {
-                    issuesHtml += `<div class="issue-category">
-                        <div class="issue-category-header">
-                            <span class="issue-category-title">Invalid or Missing Page Numbers</span>
-                            <span class="badge badge-error">${escapeHtml(issues.invalid_pages.length)}</span>
-                        </div>
-                        <ul class="issue-list error-list">`;
-                    for (const item of issues.invalid_pages) {
-                        issuesHtml += `<li>Row ${escapeHtml(item.index)}: Clause "${escapeHtml(item.clause_number)}" — ${escapeHtml(item.reason)}</li>`;
-                    }
-                    issuesHtml += '</ul></div>';
+                    issuesHtml += `<div class="issue-summary-item"><span class="badge badge-error">${escapeHtml(issues.invalid_pages.length)}</span> Invalid Pages</div>`;
                 }
+                issuesHtml += '</div>';
             }
             
             issuesSummary.innerHTML = issuesHtml;
             
+            // Render table with inline issue badges
             let tableHtml = '';
-            for (const clause of data.clauses) {
-                const num = clause.clause_number ? `<span class="col-number">${escapeHtml(clause.clause_number)}</span>` : '<span class="empty-value">—</span>';
+            for (let i = 0; i < data.clauses.length; i++) {
+                const clause = data.clauses[i];
+                const rowIssues = issueMap[i] || [];
+                const hasPageError = rowIssues.some(iss => iss.type === 'page');
+                const hasAnyIssue = rowIssues.length > 0;
+                
+                const rowClass = hasPageError ? 'row-issue-error' : (hasAnyIssue ? 'row-issue' : '');
+                
                 const title = clause.clause_title ? escapeHtml(clause.clause_title) : '<span class="empty-value">—</span>';
                 const page = clause.clause_page !== '' && clause.clause_page !== null ? escapeHtml(clause.clause_page) : '<span class="empty-value">—</span>';
                 const path = clause.clause_path && clause.clause_path.length > 0 
                     ? `<span class="clause-path">[${clause.clause_path.map(p => escapeHtml(p)).join(', ')}]</span>` 
                     : '<span class="empty-value">—</span>';
                 
-                tableHtml += `<tr>
+                let badgesHtml = '';
+                if (rowIssues.length > 0) {
+                    badgesHtml = '<div class="issue-badges">';
+                    for (const iss of rowIssues) {
+                        const badgeClass = iss.type === 'gap' ? 'inline-badge-gap' : (iss.type === 'title' ? 'inline-badge-title' : 'inline-badge-page');
+                        badgesHtml += `<span class="inline-badge ${badgeClass}" title="${escapeHtml(iss.tooltip)}">${escapeHtml(iss.label)}</span>`;
+                    }
+                    badgesHtml += '</div>';
+                } else {
+                    badgesHtml = '<span class="empty-value">—</span>';
+                }
+                
+                tableHtml += `<tr class="${rowClass}">
                     <td class="col-number">${clause.clause_number ? escapeHtml(clause.clause_number) : '<span class="empty-value">—</span>'}</td>
                     <td class="col-title">${title}</td>
                     <td class="col-page">${page}</td>
                     <td class="col-path">${path}</td>
+                    <td class="col-issues">${badgesHtml}</td>
                 </tr>`;
             }
             
