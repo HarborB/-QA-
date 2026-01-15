@@ -111,7 +111,8 @@ def extract_display_fields(clauses: List[dict]) -> List[dict]:
             "clause_number": normalize_clause_number(str(clause.get("clause_number", ""))),
             "clause_title": clause.get("clause_title", ""),
             "clause_page": clause.get("clause_page", ""),
-            "clause_path": clause.get("clause_path", [])
+            "clause_path": clause.get("clause_path", []),
+            "clause_content": clause.get("clause_content", "")
         })
     return result
 
@@ -515,6 +516,111 @@ async def home():
             min-width: 160px;
         }
         
+        .col-content {
+            min-width: 150px;
+            max-width: 200px;
+        }
+        
+        .content-preview {
+            display: block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 180px;
+            color: #4b5563;
+            font-size: 0.85rem;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: #f9fafb;
+            transition: background 0.15s;
+        }
+        
+        .content-preview:hover {
+            background: #e5e7eb;
+            color: #111827;
+        }
+        
+        .content-empty {
+            color: #9ca3af;
+            font-style: italic;
+            font-size: 0.8rem;
+        }
+        
+        /* Modal styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+        
+        .modal {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .modal-title {
+            font-weight: 600;
+            color: #111827;
+            font-size: 1rem;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6b7280;
+            padding: 4px 8px;
+            border-radius: 4px;
+            line-height: 1;
+        }
+        
+        .modal-close:hover {
+            background: #f3f4f6;
+            color: #111827;
+        }
+        
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        
+        .modal-content-text {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #374151;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        
         .clause-path {
             font-family: "SF Mono", "Fira Code", monospace;
             font-size: 0.8rem;
@@ -688,12 +794,26 @@ async def home():
                                 <th class="col-title" data-i18n="colTitle">Title</th>
                                 <th class="col-page" data-i18n="colPage">Page</th>
                                 <th class="col-path" data-i18n="colPath">Path</th>
+                                <th class="col-content" data-i18n="colContent">Content</th>
                                 <th class="col-issues" data-i18n="colIssues">Issues</th>
                             </tr>
                         </thead>
                         <tbody id="clauseTable"></tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Content Modal -->
+    <div id="contentModal" class="modal-overlay" onclick="closeModalOnOverlay(event)">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title" id="modalTitle" data-i18n="modalTitle">Clause Content</span>
+                <button class="modal-close" onclick="closeContentModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-content-text" id="modalContentText"></div>
             </div>
         </div>
     </div>
@@ -714,7 +834,9 @@ async def home():
                 colTitle: 'Title',
                 colPage: 'Page',
                 colPath: 'Path',
+                colContent: 'Content',
                 colIssues: 'Issues',
+                modalTitle: 'Clause Content',
                 clauses: 'clauses',
                 noIssues: 'No structural issues detected',
                 continuityGaps: 'Continuity Gaps',
@@ -746,7 +868,9 @@ async def home():
                 colTitle: '标题',
                 colPage: '页码',
                 colPath: '路径',
+                colContent: '内容',
                 colIssues: '问题',
+                modalTitle: '条款内容',
                 clauses: '个条款',
                 noIssues: '未检测到结构问题',
                 continuityGaps: '连续性缺口',
@@ -970,17 +1094,71 @@ async def home():
                     badgesHtml = '<span class="empty-value">—</span>';
                 }
                 
+                // Content preview
+                const content = clause.clause_content;
+                let contentCell;
+                if (content && content.trim()) {
+                    const preview = escapeHtml(content.substring(0, 50));
+                    contentCell = `<span class="content-preview" onclick="openContentModal(${i})" title="${escapeHtml(content.substring(0, 100))}">${preview}</span>`;
+                } else {
+                    contentCell = '<span class="content-empty">—</span>';
+                }
+                
                 tableHtml += `<tr class="${rowClass}">
                     <td class="col-number">${clause.clause_number ? escapeHtml(clause.clause_number) : '<span class="empty-value">—</span>'}</td>
                     <td class="col-title">${title}</td>
                     <td class="col-page">${page}</td>
                     <td class="col-path">${path}</td>
+                    <td class="col-content">${contentCell}</td>
                     <td class="col-issues">${badgesHtml}</td>
                 </tr>`;
             }
             
             clauseTable.innerHTML = tableHtml;
         }
+        
+        // Store clauses data for modal access
+        let currentClausesData = [];
+        
+        // Override renderResults to store data
+        const originalRenderResults = renderResults;
+        renderResults = function(data) {
+            currentClausesData = data.clauses;
+            originalRenderResults(data);
+        };
+        
+        function openContentModal(index) {
+            const clause = currentClausesData[index];
+            if (!clause || !clause.clause_content) return;
+            
+            const modal = document.getElementById('contentModal');
+            const contentText = document.getElementById('modalContentText');
+            const modalTitle = document.getElementById('modalTitle');
+            
+            modalTitle.textContent = t('modalTitle');
+            contentText.textContent = clause.clause_content;
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeContentModal() {
+            const modal = document.getElementById('contentModal');
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        
+        function closeModalOnOverlay(event) {
+            if (event.target.id === 'contentModal') {
+                closeContentModal();
+            }
+        }
+        
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeContentModal();
+            }
+        });
     </script>
 </body>
 </html>'''
