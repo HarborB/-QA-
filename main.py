@@ -52,14 +52,14 @@ def validate_clauses(clauses: List[dict]) -> dict:
         
         if not clause_title or not str(clause_title).strip():
             issues["empty_titles"].append({
-                "index": i + 1,
+                "index": i,
                 "clause_number": clause_number or "(no number)"
             })
         
         page_str = str(clause_page).strip() if clause_page is not None else ""
         if not page_str:
             issues["invalid_pages"].append({
-                "index": i + 1,
+                "index": i,
                 "clause_number": clause_number or "(no number)",
                 "reason": "empty"
             })
@@ -68,7 +68,7 @@ def validate_clauses(clauses: List[dict]) -> dict:
                 float(page_str)
             except ValueError:
                 issues["invalid_pages"].append({
-                    "index": i + 1,
+                    "index": i,
                     "clause_number": clause_number or "(no number)",
                     "reason": f"non-numeric: '{page_str}'"
                 })
@@ -78,7 +78,7 @@ def validate_clauses(clauses: List[dict]) -> dict:
             if parent_key not in siblings_by_parent:
                 siblings_by_parent[parent_key] = []
             siblings_by_parent[parent_key].append({
-                "index": i + 1,
+                "index": i,
                 "clause_number": clause_number,
                 "last_num": extract_last_number(clause_number)
             })
