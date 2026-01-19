@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse, PlainTextResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse
 from pydantic import BaseModel
 from typing import List, Optional
 import json
@@ -935,6 +935,10 @@ async def home():
             const file = event.target.files[0];
             if (!file) return;
             
+            // Clear previous results immediately
+            document.getElementById('errorDiv').style.display = 'none';
+            document.getElementById('results').style.display = 'none';
+            
             if (!file.name.endsWith('.json') && file.type !== 'application/json') {
                 const errorDiv = document.getElementById('errorDiv');
                 errorDiv.textContent = t('errorInvalidFile');
@@ -946,12 +950,16 @@ async def home():
             const reader = new FileReader();
             reader.onload = function(e) {
                 document.getElementById('jsonInput').value = e.target.result;
+                // Reset file input to allow re-uploading same file
+                document.getElementById('fileInput').value = '';
                 analyzeJson();
             };
             reader.onerror = function() {
                 const errorDiv = document.getElementById('errorDiv');
                 errorDiv.textContent = t('errorReadFile');
                 errorDiv.style.display = 'block';
+                // Reset file input on error
+                document.getElementById('fileInput').value = '';
             };
             reader.readAsText(file);
         }
@@ -990,9 +998,13 @@ async def home():
             btn.textContent = t('analyzing');
             
             try {
-                const response = await fetch('/analyze', {
+                const response = await fetch('/analyze?t=' + Date.now(), {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache, no-store',
+                        'X-Request-Id': Date.now().toString()
+                    },
                     body: JSON.stringify({clauses: parsed})
                 });
                 
@@ -1172,10 +1184,18 @@ async def analyze(request: AnalyzeRequest):
     clauses = request.clauses
     display_clauses = extract_display_fields(clauses)
     issues = validate_clauses(clauses)
-    return {
-        "clauses": display_clauses,
-        "issues": issues
-    }
+    
+    return JSONResponse(
+        content={
+            "clauses": display_clauses,
+            "issues": issues
+        },
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
+    )
 
 if __name__ == "__main__":
     import uvicorn
