@@ -19,21 +19,71 @@ def normalize_clause_number(clause_number: str) -> str:
         return ""
     return str(clause_number).rstrip('.')
 
-def get_parent_path(clause_path: List[str]) -> str:
-    if not clause_path or len(clause_path) < 2:
-        return ""
-    return " > ".join(clause_path[:-1])
-
-def extract_last_number(clause_number: str) -> Optional[int]:
+def parse_clause_parts(clause_number: str) -> List[int]:
+    """Parse clause number into list of integers, e.g. '6.1.2' -> [6, 1, 2]"""
     normalized = normalize_clause_number(clause_number)
     if not normalized:
-        return None
-    parts = normalized.split('.')
-    last_part = parts[-1]
-    try:
-        return int(last_part)
-    except ValueError:
-        return None
+        return []
+    parts = []
+    for p in normalized.split('.'):
+        try:
+            parts.append(int(p))
+        except ValueError:
+            return []
+    return parts
+
+def is_valid_transition(prev_parts: List[int], curr_parts: List[int]) -> tuple:
+    """
+    Check if transition from prev to curr clause is valid.
+    Returns (is_valid, gap_reason) tuple.
+    
+    Valid transitions:
+    - Same level, increment by 1: [6] -> [7], [6,1] -> [6,2]
+    - Direct child starting at 1: [6] -> [6,1], [6,1] -> [6,1,1]
+    - Return to ancestor and continue: [6,1,2] -> [6,2] or [6,1,2] -> [7]
+    
+    Invalid transitions:
+    - Skip numbers at same level: [6] -> [8]
+    - Skip hierarchy levels: [6] -> [6,1,1] (missing 6.1)
+    """
+    if not prev_parts or not curr_parts:
+        return (True, None)
+    
+    prev_len = len(prev_parts)
+    curr_len = len(curr_parts)
+    
+    if curr_len == prev_len:
+        if curr_parts[:-1] == prev_parts[:-1] and curr_parts[-1] == prev_parts[-1] + 1:
+            return (True, None)
+        else:
+            expected = prev_parts[-1] + 1
+            return (False, f"expected {expected} at level {curr_len}, found {curr_parts[-1]}")
+    
+    if curr_len == prev_len + 1:
+        if curr_parts[:-1] == prev_parts and curr_parts[-1] == 1:
+            return (True, None)
+        elif curr_parts[:-1] == prev_parts:
+            return (False, f"child should start at 1, found {curr_parts[-1]}")
+        else:
+            return (False, f"invalid child: expected {'.'.join(map(str, prev_parts))}.1")
+    
+    if curr_len > prev_len + 1:
+        expected_parent = '.'.join(map(str, prev_parts)) + '.1'
+        return (False, f"skipped hierarchy levels, expected {expected_parent}")
+    
+    if curr_len < prev_len:
+        for level in range(curr_len - 1, -1, -1):
+            if level < curr_len - 1:
+                if curr_parts[:level+1] == prev_parts[:level+1]:
+                    continue
+            ancestor = prev_parts[:level+1] if level < prev_len else prev_parts
+            if curr_parts[:level] == ancestor[:level] and curr_parts[level] == ancestor[level] + 1:
+                return (True, None)
+        if curr_parts[0] == prev_parts[0] + 1 and (curr_len == 1 or curr_parts[1:] == [1] * (curr_len - 1)):
+            return (True, None)
+        return (False, f"invalid return to ancestor level")
+    
+    return (True, None)
 
 def validate_clauses(clauses: List[dict]) -> dict:
     issues = {
@@ -42,13 +92,14 @@ def validate_clauses(clauses: List[dict]) -> dict:
         "invalid_pages": []
     }
     
-    siblings_by_parent = {}
+    prev_clause_number = None
+    prev_parts = []
+    prev_index = -1
     
     for i, clause in enumerate(clauses):
         clause_number = clause.get("clause_number", "")
         clause_title = clause.get("clause_title", "")
         clause_page = clause.get("clause_page", "")
-        clause_path = clause.get("clause_path", [])
         
         if not clause_title or not str(clause_title).strip():
             issues["empty_titles"].append({
@@ -73,34 +124,23 @@ def validate_clauses(clauses: List[dict]) -> dict:
                     "reason": f"non-numeric: '{page_str}'"
                 })
         
-        if clause_path:
-            parent_key = get_parent_path(clause_path)
-            if parent_key not in siblings_by_parent:
-                siblings_by_parent[parent_key] = []
-            siblings_by_parent[parent_key].append({
-                "index": i,
-                "clause_number": clause_number,
-                "last_num": extract_last_number(clause_number)
-            })
-    
-    for parent_key, siblings in siblings_by_parent.items():
-        valid_siblings = [s for s in siblings if s["last_num"] is not None]
-        valid_siblings.sort(key=lambda x: x["last_num"])
+        curr_parts = parse_clause_parts(clause_number)
         
-        for j in range(1, len(valid_siblings)):
-            prev = valid_siblings[j - 1]
-            curr = valid_siblings[j]
-            expected = prev["last_num"] + 1
-            actual = curr["last_num"]
-            
-            if actual != expected:
+        if curr_parts and prev_parts:
+            is_valid, reason = is_valid_transition(prev_parts, curr_parts)
+            if not is_valid:
                 issues["continuity_gaps"].append({
-                    "parent": parent_key or "(root level)",
-                    "after_clause": prev["clause_number"],
-                    "before_clause": curr["clause_number"],
-                    "expected_next": expected,
-                    "found": actual
+                    "prev_index": prev_index,
+                    "curr_index": i,
+                    "after_clause": prev_clause_number,
+                    "before_clause": clause_number,
+                    "reason": reason
                 })
+        
+        if curr_parts:
+            prev_parts = curr_parts
+            prev_clause_number = clause_number
+            prev_index = i
     
     return issues
 
@@ -1099,11 +1139,11 @@ async def home():
             }
             
             for (const gap of issues.continuity_gaps) {
-                // Gap is associated with the "before_clause" row
-                const idx = data.clauses.findIndex(c => c.clause_number === gap.before_clause);
-                if (idx !== -1) {
+                // Gap is associated with the current clause row (where the gap was detected)
+                const idx = gap.curr_index;
+                if (idx !== undefined && idx >= 0) {
                     if (!issueMap[idx]) issueMap[idx] = [];
-                    issueMap[idx].push({type: 'gap', label: t('badgeGap'), tooltip: t('tooltipGap', {expected: gap.expected_next, after: gap.after_clause, found: gap.found})});
+                    issueMap[idx].push({type: 'gap', label: t('badgeGap'), tooltip: `${gap.after_clause} → ${gap.before_clause}: ${gap.reason}`});
                 }
             }
             
