@@ -324,9 +324,39 @@ async def home():
             gap: 12px;
         }
         
-        .file-input {
+        .file-name {
+            color: #6b7280;
             font-size: 0.9rem;
-            color: #374151;
+        }
+        
+        .file-name.has-file {
+            color: #059669;
+            font-weight: 500;
+        }
+        
+        .file-input {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
+        
+        .file-input-btn {
+            background: #f3f4f6;
+            border: 1px solid #d1d5db;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        
+        .file-input-btn:hover {
+            background: #e5e7eb;
         }
         
         .file-input::file-selector-button {
@@ -767,6 +797,8 @@ async def home():
                 <label class="upload-label" data-i18n="uploadLabel">Or Upload JSON File</label>
                 <div class="file-input-wrapper">
                     <input type="file" id="fileInput" class="file-input" accept=".json,application/json" onchange="handleFileUpload(event)">
+                    <label for="fileInput" class="file-input-btn" data-i18n="chooseFile">Choose File</label>
+                    <span id="fileNameDisplay" class="file-name" data-i18n="noFileChosen">No file chosen</span>
                 </div>
             </div>
         </div>
@@ -852,7 +884,9 @@ async def home():
                 errorNotArray: 'JSON must be an array of clause objects.',
                 errorServer: 'Server error: ',
                 errorReadFile: 'Error reading file. Please try again.',
-                errorInvalidFile: 'Please upload a valid JSON file (.json)'
+                errorInvalidFile: 'Please upload a valid JSON file (.json)',
+                noFileChosen: 'No file chosen',
+                chooseFile: 'Choose File'
             },
             zh: {
                 title: '条款结构QA工具',
@@ -886,7 +920,9 @@ async def home():
                 errorNotArray: 'JSON必须是条款对象数组。',
                 errorServer: '服务器错误：',
                 errorReadFile: '读取文件失败，请重试。',
-                errorInvalidFile: '请上传有效的JSON文件（.json）'
+                errorInvalidFile: '请上传有效的JSON文件（.json）',
+                noFileChosen: '未选择文件',
+                chooseFile: '选择文件'
             }
         };
         
@@ -929,11 +965,20 @@ async def home():
             document.getElementById('fileInput').value = '';
             document.getElementById('errorDiv').style.display = 'none';
             document.getElementById('results').style.display = 'none';
+            // Reset filename display
+            const fileNameDisplay = document.getElementById('fileNameDisplay');
+            fileNameDisplay.textContent = t('noFileChosen');
+            fileNameDisplay.classList.remove('has-file');
         }
         
         function handleFileUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
+            
+            // Display selected filename
+            const fileNameDisplay = document.getElementById('fileNameDisplay');
+            fileNameDisplay.textContent = file.name;
+            fileNameDisplay.classList.add('has-file');
             
             // Clear previous results immediately
             document.getElementById('errorDiv').style.display = 'none';
@@ -944,6 +989,9 @@ async def home():
                 errorDiv.textContent = t('errorInvalidFile');
                 errorDiv.style.display = 'block';
                 event.target.value = '';
+                // Reset filename display on invalid file
+                fileNameDisplay.textContent = t('noFileChosen');
+                fileNameDisplay.classList.remove('has-file');
                 return;
             }
             
@@ -960,6 +1008,9 @@ async def home():
                 errorDiv.style.display = 'block';
                 // Reset file input on error
                 document.getElementById('fileInput').value = '';
+                // Reset filename display on error
+                fileNameDisplay.textContent = t('noFileChosen');
+                fileNameDisplay.classList.remove('has-file');
             };
             reader.readAsText(file);
         }
