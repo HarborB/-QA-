@@ -260,6 +260,28 @@ async def home():
             border-radius: 10px;
             padding: 28px;
             margin-bottom: 32px;
+            transition: border-color 0.2s, background-color 0.2s;
+        }
+        
+        .input-section.drag-over {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+            border-style: dashed;
+        }
+        
+        .drag-hint {
+            display: none;
+            text-align: center;
+            color: #3b82f6;
+            font-size: 0.9rem;
+            padding: 12px;
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 6px;
+            margin-bottom: 12px;
+        }
+        
+        .input-section.drag-over .drag-hint {
+            display: block;
         }
         
         .input-label {
@@ -812,7 +834,8 @@ async def home():
             </div>
         </header>
         
-        <div class="input-section">
+        <div class="input-section" id="inputSection">
+            <div class="drag-hint" data-i18n="dropFileHere">Drop JSON file here</div>
             <label class="input-label" for="jsonInput" data-i18n="inputJson">Input JSON</label>
             <textarea id="jsonInput" placeholder='[
   {
@@ -926,7 +949,9 @@ async def home():
                 errorReadFile: 'Error reading file. Please try again.',
                 errorInvalidFile: 'Please upload a valid JSON file (.json)',
                 noFileChosen: 'No file chosen',
-                chooseFile: 'Choose File'
+                chooseFile: 'Choose File',
+                dropFileHere: 'Drop JSON file here',
+                invalidFileType: 'Invalid file type. Please drop a JSON file.'
             },
             zh: {
                 title: '条款结构QA工具',
@@ -962,7 +987,9 @@ async def home():
                 errorReadFile: '读取文件失败，请重试。',
                 errorInvalidFile: '请上传有效的JSON文件（.json）',
                 noFileChosen: '未选择文件',
-                chooseFile: '选择文件'
+                chooseFile: '选择文件',
+                dropFileHere: '拖放 JSON 文件到此处',
+                invalidFileType: '无效的文件类型。请拖放 JSON 文件。'
             }
         };
         
@@ -1054,6 +1081,82 @@ async def home():
             };
             reader.readAsText(file);
         }
+        
+        // Drag and drop handling
+        function setupDragAndDrop() {
+            const inputSection = document.getElementById('inputSection');
+            
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                inputSection.addEventListener(eventName, preventDefaults, false);
+                document.body.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                inputSection.addEventListener(eventName, highlight, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                inputSection.addEventListener(eventName, unhighlight, false);
+            });
+            
+            function highlight() {
+                inputSection.classList.add('drag-over');
+            }
+            
+            function unhighlight() {
+                inputSection.classList.remove('drag-over');
+            }
+            
+            inputSection.addEventListener('drop', handleDrop, false);
+            
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                
+                if (files.length === 0) return;
+                
+                const file = files[0];
+                const fileNameDisplay = document.getElementById('fileNameDisplay');
+                const errorDiv = document.getElementById('errorDiv');
+                
+                // Clear previous results
+                errorDiv.style.display = 'none';
+                document.getElementById('results').style.display = 'none';
+                
+                // Validate file type
+                if (!file.name.endsWith('.json') && file.type !== 'application/json') {
+                    errorDiv.textContent = t('invalidFileType');
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+                
+                // Display filename
+                fileNameDisplay.textContent = file.name;
+                fileNameDisplay.classList.add('has-file');
+                
+                // Read and process file
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('jsonInput').value = e.target.result;
+                    analyzeJson();
+                };
+                reader.onerror = function() {
+                    errorDiv.textContent = t('errorReadFile');
+                    errorDiv.style.display = 'block';
+                    fileNameDisplay.textContent = t('noFileChosen');
+                    fileNameDisplay.classList.remove('has-file');
+                };
+                reader.readAsText(file);
+            }
+        }
+        
+        // Initialize drag and drop on page load
+        document.addEventListener('DOMContentLoaded', setupDragAndDrop);
         
         async function analyzeJson() {
             const input = document.getElementById('jsonInput').value.trim();
