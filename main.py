@@ -844,8 +844,8 @@ async def home():
                 <p class="page-subtitle" data-i18n="subtitle">Validate structural consistency of AI-extracted document clauses</p>
             </div>
             <div class="lang-toggle">
-                <button class="lang-btn active" id="langEn" onclick="setLanguage('en')">EN</button>
-                <button class="lang-btn" id="langZh" onclick="setLanguage('zh')">中文</button>
+                <button class="lang-btn" id="langEn" onclick="setLanguage('en')">EN</button>
+                <button class="lang-btn active" id="langZh" onclick="setLanguage('zh')">中文</button>
             </div>
         </header>
         
@@ -999,7 +999,7 @@ async def home():
             }
         };
         
-        let currentLang = localStorage.getItem('lang') || 'en';
+        let currentLang = localStorage.getItem('lang') || 'zh';
         
         function t(key, params = {}) {
             let text = i18n[currentLang][key] || i18n['en'][key] || key;
