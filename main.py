@@ -284,6 +284,21 @@ async def home():
             display: block;
         }
         
+        .input-hint {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .input-hint svg {
+            width: 14px;
+            height: 14px;
+            opacity: 0.7;
+        }
+        
         .input-label {
             display: block;
             font-size: 0.8rem;
@@ -835,24 +850,13 @@ async def home():
         </header>
         
         <div class="input-section" id="inputSection">
-            <div class="drag-hint" data-i18n="dropFileHere">Drop JSON file here</div>
+            <div class="drag-hint" data-i18n="dropFileHere">Drop file to upload</div>
             <label class="input-label" for="jsonInput" data-i18n="inputJson">Input JSON</label>
-            <textarea id="jsonInput" placeholder='[
-  {
-    "clause_number": "1",
-    "clause_title": "Introduction",
-    "clause_page": "1",
-    "clause_content": "...",
-    "clause_path": ["1"]
-  },
-  {
-    "clause_number": "2.1",
-    "clause_title": "Definitions",
-    "clause_page": "3",
-    "clause_content": "...",
-    "clause_path": ["2", "2.1"]
-  }
-]'></textarea>
+            <textarea id="jsonInput" placeholder='[{"clause_number": "1", "clause_title": "...", "clause_page": "1", "clause_content": "...", "clause_path": ["1"]}, ...]'></textarea>
+            <div class="input-hint">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <span data-i18n="inputHint">Paste JSON above, or drag & drop a .json file anywhere in this box</span>
+            </div>
             <button id="submitBtn" class="btn-primary" onclick="analyzeJson()" data-i18n="analyze">Analyze Clauses</button>
             <button class="btn-clear" onclick="clearInput()" data-i18n="clear">Clear</button>
             
@@ -950,8 +954,9 @@ async def home():
                 errorInvalidFile: 'Please upload a valid JSON file (.json)',
                 noFileChosen: 'No file chosen',
                 chooseFile: 'Choose File',
-                dropFileHere: 'Drop JSON file here',
-                invalidFileType: 'Invalid file type. Please drop a JSON file.'
+                dropFileHere: 'Drop file to upload',
+                invalidFileType: 'Invalid file type. Please drop a JSON file.',
+                inputHint: 'Paste JSON above, or drag & drop a .json file anywhere in this box'
             },
             zh: {
                 title: '条款结构QA工具',
@@ -988,8 +993,9 @@ async def home():
                 errorInvalidFile: '请上传有效的JSON文件（.json）',
                 noFileChosen: '未选择文件',
                 chooseFile: '选择文件',
-                dropFileHere: '拖放 JSON 文件到此处',
-                invalidFileType: '无效的文件类型。请拖放 JSON 文件。'
+                dropFileHere: '拖放文件以上传',
+                invalidFileType: '无效的文件类型。请拖放 JSON 文件。',
+                inputHint: '在上方粘贴 JSON，或将 .json 文件拖放到此区域'
             }
         };
         
